@@ -11,6 +11,7 @@ import {ContractMetadataPlus} from "@thirdweb-dev/contracts/extension/ContractMe
 import {Ownable} from "@thirdweb-dev/contracts/extension/Ownable.sol";
 import {PermissionsEnumerable} from "@thirdweb-dev/contracts/extension/PermissionsEnumerable.sol";
 import {PlatformFee} from "@thirdweb-dev/contracts/extension/PlatformFee.sol";
+import {PrimarySale} from "@thirdweb-dev/contracts/extension/PrimarySale.sol";
 import {Staking20Base} from "@thirdweb-dev/contracts/base/Staking20Base.sol";
 // connecting to real world currency price with chainlink
 import {AggregatorV3Interface} from "./utils/AggregatorV3Interface.sol";
@@ -27,23 +28,21 @@ contract BYOMfg is
     Ownable,
     PermissionsEnumerable,
     PlatformFee,
-    Staking20,
+    Staking20Base,
     PriceConverter,
     SafeMath,
     AggregatorV3Interface
 {
-    /// +types
-    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.1. CUSTOM TYPES @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
-    // @Dev: using a Library; getPrice() internal, getConversionRate(uint256 ethAmount) internal
-    using PriceConverter for uint256;
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.1.  CUSTOM TYPES  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+    using PriceConverter for uint256; //using a Library;
 
-    /// +immutables and constantes
-    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.2.CONSTANTES  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
-    // @Dev: owner address is "private", so only visible to this contract owner.
-    address private immutable i_owner;
-    uint256 public constant MINIMUM_USD = 5 * 10 ** 18;
-    uint256 public constant UNIT_MULTIPLIER = 10 ** uint256(decimals);
-    // Any `bytes32` value is a valid role.
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.2. IMMUTABLE & CONSTANT VARIABLES DEFINITION  @@@@@@@@@@@@@@@@@@@@@@@@@@ */
+    // @Dev: Chain owner address is "private", so only visible to the chain owner (instant of the smart contract)
+    address private immutable i_owner; // Owner of this contract (not instance of the contract)
+    bool private _initialized; // Flag to track contract initialization
+
+    // Any `bytes32` value is a valid role. You can create roles by defining them like this.
+    // bytes32 public constant NUMBER_ROLE = keccak256("NUMBER_ROLE");
     bytes32 public constant CUSTOMER = keccak256("CUSTOMER");
     bytes32 public constant PoS = keccak256("PoS");
     bytes32 public constant MERCHANT = keccak256("MERCHANT");
@@ -54,12 +53,10 @@ contract BYOMfg is
     bytes32 public constant PoR = keccak256("PoR");
     bytes32 public constant SUPPORT = keccak256("SUPPORT");
     bytes32 public constant BUSINESSADMIN = keccak256("BUSINESSADMIN");
-
-    /// +variables
-    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.3. STATE VARIABLES @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
-    bool private _initialized; // Flag to track contract initialization
+    // chain management
     address private chainOwner; // Owner of an instance of this contract.
     uint256 public chainID;
+    // chain currency
     uint256 public chainCurrencyPeg;
     uint256 public chainCurrencyPegRate;
     uint256 public chainCurrencyDecimal;
@@ -68,7 +65,15 @@ contract BYOMfg is
     string public chainCurrencyName;
     string public chaiCurrencynSymbol;
 
+    uint256 public constant MINIMUM_USD = 5 * 10 ** 18;
+    uint256 public constant UNIT_MULTIPLIER = 10 ** uint256(decimals);
+
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.3. STATE VARIABLES DEFINITION  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+
+    /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> LIST  <<<<<<<<<<<<<<<<<<<<<<<<<*/
     address[] public chainDepositors;
+
+    /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> MAPPINGS (DICTIONARY) <<<<<<<<<<<<<<<<<<<<<<<<<*/
     //mapping to store which address deposited an amount of ETH
     mapping(address => uint256) public addressToAmount; // dictionary
     //mapping to retrieve a balance for a specific address
@@ -76,18 +81,28 @@ contract BYOMfg is
     // Approval granted to transfer tokens from one address to another.
     mapping(address => mapping(address => uint256)) internal allowed;
 
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.4. E V E N T S @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+    ///+events                          // emit eventName();
+    event DepositRecieved(address _to, uint256 _amount);
+    event TransferOrdered(
+        address sender,
+        address _to,
+        uint256 _amount,
+        string _reason
+    );
+    event TransferPending(
+        address _from,
+        address _to,
+        uint256 _amount,
+        string _reason
+    );
+    event TransferComplet(address _to, uint256 _amount);
+    event withdrawalComplet(address _from, uint256 _amount);
+
     /// +errors
-    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.4. E R R O R S @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.5. E R R O R S @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
     // Errors allow you to provide information about why an operation failed.
     error NotOwner();
-    error Unauthorized();
-    error AlreadyInitialized();
-    error ZeroAddress();
-    error SameAddress();
-    error InsufficientBalance();
-    error InsufficientAllowance();
-    error MiniAmountNotOk();
-    error NotchainOwner();
     error NotChainAdmin();
     error NotChainAuthority();
     error NotChainSanctionRef();
@@ -95,6 +110,13 @@ contract BYOMfg is
     error NotChainAgent();
     error NotChainMerchant();
     error NotChainPoS();
+    error Unauthorized();
+    error AlreadyInitialized();
+    error ZeroAddress();
+    error SameAddress();
+    error InsufficientBalance();
+    error InsufficientAllowance();
+    error MiniAmountNotOk();
     error NotCompliant();
     error KycNotCompliant();
     error amlNotCompliant();
@@ -116,29 +138,61 @@ contract BYOMfg is
     error PosMaxPerMonthExceeded();
     error PosMaxPerYearExceeded();
 
-    ///+events    (emit eventName();)
-    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.5. E V E N T S @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
-    event DepositRecieved(address _to, uint256 _amount);
-    event TransferComplet(address _to, uint256 _amount);
-    event TransferOrdered(
-        address sender,
-        address _to,
-        uint256 _amount,
-        string _reason
-    );
-    event TransferPending(
-        address _from,
-        address _to,
-        uint256 _amount,
-        string _reason
-    );
-    event withdrawalComplet(address _from, uint256 _amount);
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.6.  M O D I F I E R S @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
 
     ///+modifiers
-    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.6.  M O D I F I E R S @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+
     modifier canInitialize(address chainOwner) {
         if (!initialized) {
             revert AlreadyInitialized();
+        }
+        _;
+    }
+    modifier isChainAdmin() {
+        if (msg.sender != _chainAdmin) {
+            revert NotchainAdmin();
+        }
+        _;
+    }
+    modifier isChainCustomer() {
+        if (msg.sender != _chainCustomer) {
+            revert Unauthorized();
+        }
+        _;
+    }
+    modifier isChainMerchant() {
+        if (msg.sender != _chainMerchant) {
+            revert MerchantOnly();
+        }
+        _;
+    }
+    modifier isChainPoS() {
+        if (msg.sender != _chainPoS) {
+            revert PoSOnly();
+        }
+        _;
+    }
+    modifier isChainAgent() {
+        if (msg.sender != _chainAgent) {
+            revert AgentOnly();
+        }
+        _;
+    }
+    modifier isChainAuthority() {
+        if (msg.sender != _chainAuthority) {
+            revert ChainAuthorityOnly();
+        }
+        _;
+    }
+    modifier isChainSanctionRef() {
+        if (msg.sender != _chainSanctionRef) {
+            revert ChainSanctionRefOnly();
+        }
+        _;
+    }
+    modifier isChainPoR() {
+        if (msg.sender != _chainPoR) {
+            revert ChainPoROnly();
         }
         _;
     }
@@ -156,120 +210,35 @@ contract BYOMfg is
             revert MiniAmountNotOk();
         _;
     }
-    modifier onlyOwner() {
-        if (msg.sender != owner()) {
-            revert NotOwner();
-        }
-        _;
-    }
-    modifier onlychainOwner() {
-        if (msg.sender != chainOwner) {
-            revert NotchainOwner();
-        }
-        _;
-    }
-    modifier isChainAdmin() {
-        if (msg.sender != _chainAdmin) {
-            revert NotchainAdmin();
-        }
-        _;
-    }
-    modifier isChainAuthority() {
-        if (msg.sender != _chainAuthority) {
-            revert NotchainAuthority();
-        }
-        _;
-    }
-    modifier isChainSanctionRef() {
-        if (msg.sender != _chainSanctionRef) {
-            revert NotchainSanctionRef();
-        }
-        _;
-    }
-    modifier isChainPoR() {
-        if (msg.sender != _chainPoR) {
-            revert NotchainPoR();
-        }
-        _;
-    }
-    modifier isChainAgent() {
-        if (msg.sender != _chainAgent) {
-            revert NotchainAgent();
-        }
-        _;
-    }
-    modifier isChainMerchant() {
-        if (msg.sender != _chainMerchant) {
-            revert NotchainMerchant();
-        }
-        _;
-    }
-    modifier isChainPoS() {
-        if (msg.sender != _chainPoS) {
-            revert NotchainPoS();
-        }
-        _;
-    }
-    modifier isChainCustomer() {
-        if (msg.sender != _chainCustomer) {
-            revert Unauthorized();
-        }
-        _;
-    }
-    modifier roleXOnly() {
-        if (
-            msg.sender != _chainOwner &&
-            msg.sender != _chainAdmin &&
-            msg.sender != _chainAuthority &&
-            msg.sender != _chainSanctionRef &&
-            msg.sender != _chainPoR &&
-            msg.sender != _chainAgent &&
-            msg.sender != _chainMerchant &&
-            msg.sender != _chainPoS
-        ) {
-            revert Unauthorized();
-        }
-        _;
-    }
-    modifier onlyCompliant() {
-        if (
-            msg.sender != _chainOwner &&
-            msg.sender != _chainAdmin &&
-            msg.sender != _chainAuthority &&
-            msg.sender != _chainSanctionRef &&
-            msg.sender != _chainPoR &&
-            msg.sender != _chainAgent &&
-            msg.sender != _chainMerchant &&
-            msg.sender != _chainPoS &&
-            msg.sender != _chainCustomer
-        ) {
-            revert NotCompliant();
-        }
-        _;
-    }
 
     /*
-    modifier onlyKyced() {
-        //is the message sender KYCed?
-        require(msg.sender == kyced);
-        _;
-    }
-    modifier onlyNotSanctioned() {
-        //is the message sender sanctionfree?
-        require(msg.sender == notSanctioned);
-        _;
-    }
+        modifier onlyKyced() {
+            //is the message sender owner of the contract?
+            require(msg.sender == kyced);
+            _;
+        }
+        modifier onlyNotSanctioned() {
+            //is the message sender owner of the contract?
+            require(msg.sender == notSanctioned);
+            _;
+        }
     */
 
-    /// +constructor
-    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.7. CONSTRUCTOR @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
-    // The following constructor sets up owner and metadata for this contract only.
-    constructor() {
+    /* The following constructor sets up the TokenERC20 contract, stores the contract's owner
+     *  and initializes metadata for this contract.
+     */
+    constructor(
+        // Calling the constructor of the Parent Contract:
+        address _defaultAdmin,
+        string memory _name, // default_Curency_name, eg. USD
+        string memory _symbol, // default_Currency_symbol
+        address _primarySaleRecipient
+    ) TokenERC20(_defaultAdmin, _name, _symbol, _primarySaleRecipient) {
         // Owner Assignment:
         i_owner = msg.sender;
         console.log("Owner is deploying the BYOM contract", "${i_owner}");
 
-        /// 1. Levraging "ContractMetadataPlus" abstract contract, to set up contract metadatas
+        /// 1. Extending with "ContractMetadataPlus " abstract contract
         // The metadata variable is being populated with values using the ContractMetadataPlus structure, define in IContractMetadataPlus
         metadata = ContractMetadataPlus(
             "BYOM France",
@@ -278,50 +247,45 @@ contract BYOMfg is
             3479831479814,
             "https://externalLink.net"
         );
+
         _initialized = false; // Contract is not yet initialized
     }
 
-    /// +functions
-    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 1.0. FUNCTIONS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
-
     /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> F1: INITx -> TOKEN VARIABLES (ASSET VALUE TRACKING:) INITIAL STATE  <<<<<<<<<<<<< */
+    /* dev Since proxied contracts do not make use of a constructor, 
+     * we move constructor logic to an external initializer function called `initialize`
+
+     * @dev Initializes a contract by setting chain parameters.
+     * @dev Initializes an instance of a chain for this contract and sets the state variables.
+     * @dev initializer is a parent from "import "./utils/Initializable.sol""?
+     * @dev unique time we get in, these parameters are set,
+     * @dev Then next time, execution will be forbiden by canInitialize modifier.
+     */
+
+    /**
+     * @notice Initializes the contract and sets the owner.
+     * @param _newOwner The address to set as the new owner of the contract.
+     */
 
     function initialize(
-        address _newOwner,
-        uint256 _chainID,
+        _newOwner,
+        _chainID,
         _chainCurrencyName,
-        _chaiCurrencySymbol,
+        _chaiCurrencynSymbol,
         _chainCurrencyDecimal,
         _chainCurrencyPeg,
         _chainCurrencyPegRate,
-        uint256 _chainInitialSupply,
-        uint256 _chainTotalSupply,
-        uint256 _platformFeeBps,
-        uint256 _flatPlatformFee,
-        uint80 _timeUnit,
-        uint256 _rewardRatioNumerator,
-        uint256 _rewardRatioDenominator
-    )
-        external
-        // calling the TokenERC20 constructor.
-        TokenERC20(
-            _defaultAdmin,
-            _name,
-            _symbol,
-            _contractURI,
-            _trustedForwarders,
-            _primarySaleRecipient,
-            _platformFeeRecipient,
-            _platformFeeBps
-        )
-        initializer
-        canInitialize(_newOwner)
-    {
-        /// 2. Levraging "Ownable" abstract contract
+        _chainInitialSupply,
+        _chainTotalSupply
+    ) external initializer canInitialize(_newOwner) {
+        /// 2. Extending with "Ownable" abstract contract
         _setupOwner(_newOwner);
         _initialized = true;
 
-        /// 3. Levraging "PermissionEnumerable" abstract contract
+        /// 3. Extending with "PermissionEnumerable" abstract contract
+        /* lets create roles.
+         * The Enumerable part provides the capability to view all the addresses holding a specific role.
+         */
         // setting Chain roles.
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender); // inherited from PermissionEnumerable which provides role-based access control.
         _setupRole(_CUSTOMER_ROLE, CUSTOMER);
@@ -335,74 +299,35 @@ contract BYOMfg is
         _setupRole(_SUPPORT_ROLE, SUPPORT);
         _setupRole(_BUSINESSADMIN_ROLE, BUSINESSADMIN);
 
-        // Todo:
-        // further features: user status during Tx: Depositor / Delegator, Holder (Self Custodial), Spender,/ Withdrawer.
-        // we will incetivize the Delegator power by rewarding duration + amount delegated (less Spender or Holder).
-
         // setting Chain parameters
         chainID = _chainID;
         chainCurrencyName = _chainCurrencyName;
-        chaiCurrencySymbol = _chaiCurrencySymbol;
+        chaiCurrencynSymbol = _chaiCurrencynSymbol;
         chainCurrencyDecimal = _chainCurrencyDecimal;
         chainCurrencyPeg = _chainCurrencyPeg;
         chainCurrencyPegRate = _chainCurrencyPegRate;
         chainInitialSupply = _chainInitialSupply;
         chainTotalSupply = _chainTotalSupply;
 
-        /// 4. Levraging "PlatformFee" abstract contract
-        // Set platform fee details
-        _setupPlatformFeeInfo(_platformFeeRecipient, _platformFeeBps);
-        _setupFlatPlatformFeeInfo(_platformFeeRecipient, _flatPlatformFee);
-
-        /// 5. Levraging "Staking20" abstract contract: Initialize Staking Conditions:
-        _setStakingCondition(
-            _timeUnit,
-            _rewardRatioNumerator,
-            _rewardRatioDenominator
-        );
-
         // all the total supply is credited to the owner
         balances[chainOwner] = chainTotalSupply;
 
         // @dev Emitted when a new Owner is set.
         emit Initialized(chainOwner, _chainID);
-        // Emit event for platform fee setup
-        emit PlatformFeeInitialized(
-            _platformFeeRecipient,
-            _platformFeeBps,
-            _flatPlatformFee
-        );
     }
 
-    // Override _canSetOwner() to control who can set the owner during initialization
+    // Override _canSetOwner to control who can set the owner during initialization
     function _canSetOwner() internal view virtual override returns (bool) {
         return msg.sender == owner(); // when "true", allow owner to set during initialization
     }
 
-    // Access Platform Fee Information:
-    function getPlatformFee()
-        public
-        view
-        returns (address, uint16, PlatformFeeType)
-    {
-        (address feeRecipient, uint16 feeBps) = getPlatformFeeInfo();
-        PlatformFeeType feeType = getPlatformFeeType();
-        return (feeRecipient, feeBps, feeType);
-    }
+    /// 4. Extending with "PlatformFee" abstract contract
 
-    /// Levraging Staking features:
+    /// 5. Extending with "Staking20Base" abstract contract
 
-    // Overriding the function -stake() to implement internal Staking Logic:
+    /// 6. Extending with "PrimarySale" abstract contract
 
-    // Overriding the _withdraw() function to handle the withdrawal of staked tokens
-
-    // Overriding the _calculateRewards() function to calculate rewards for stakers
-
-    // Overriding the _mintRewards() function to mint and transfer rewards to stakers.
-
-    /** Overriding the _canSetStakeConditions() function to control who can modify the staking conditions.
-     * This function should return true if the caller is authorized to set stake conditions.
-     */
+    /// @Dev: having created roles, we need to write custom logic that depends on whether a given wallet holds a given role.
 
     /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> F -> get the version of the chainlink pricefeed (public view) <<<<<<<<<<<<< */
     function getVersion() public view returns (uint256) {
@@ -433,30 +358,17 @@ contract BYOMfg is
     }
 
     /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> F -> DEPOSIT (public payable) <<<<<<<<<<<<< */
-    /* @dev  Allow the user to deposit USD */
+    /* @dev  Allow the user to deposit */
     function deposit() public payable minimumRequire {
         // @Dev: payable function which needs to add minimum ETH
         // 18 digit number to be compared with deposited amount
-        uint256 minimumUSD = 50 * 10 ** 18; //the deposited amount is not less than 50 USD?
+        uint256 minimumUSD = 5 * 10 ** 18; //the deposited amount is not less than 5 USD?
         addressToAmount[msg.sender] += msg.value;
         chainDepositors.push(msg.sender);
-
-        /** Todo: fund sent directly to PoR (AVAX delegation to BYOMfg's validators, base by uptime, for minimum of 2 weeks?!)
-         * rewards will come to pay the supervalidator in charge of borrowing when user transfer its hold
-         * With the 'signature minting' mechanism: the user generate a 'mint request' to the contract, which will be signed  by the contract's Admin.
-         * The contract's Admin will then send back the signed payload, of mint request, to the the depositor, autorizing the depositor to mint the requested amount of tokens.
-         * /
-         */
     }
 
-    /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> F -> TRANSFER (public) <<<<<<<<<<<<< */
-    /** Overriding transfer()/ send() / transferTo()/ transferFrom() from Token20 by adding logic to:
-     * 1) flashloan to cash-advanced sender,
-     * 2)  by claiming ownership of the amount borrowed on behalf of the sender, to get back fund from PoR.
-     */
-
     /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> F -> WITHDRAW-ALL (public payable) <<<<<<<<<<<<< */
-    // @Dev: payable function to withdraw all the ETH from the contract, by the contract owner only
+    // @Dev: payable function to withdraw all the ETH from the contract, by the owner only
     function ownerWithdraw() public payable onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
         //iterate through the depositors list and make them 0 since all the deposited amount has been withdrawn
@@ -471,10 +383,6 @@ contract BYOMfg is
         // chainDepositors list will be reset to 0
         chainDepositors = new address[](0);
     }
-
-    /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> F -> WITHDRAW-ROLEX (public payable) <<<<<<<<<<<<< */
-    // Overriding withraw function fron Token20 base contract.
-    function roleXWithdraw() public payable roleXOnly {}
 
     /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ H E L P E R  F U N C T I O N S @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
     // special functions such as constructor(), fallback() and receive() don't need the keyword function.
