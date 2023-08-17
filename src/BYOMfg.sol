@@ -2,8 +2,9 @@
 pragma solidity >=0.6.0 <0.9.0;
 
 /// +imports
-/* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.0. IMPORTS (10) @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
-// from Pre-built ERC20 contracts/ token
+/* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.0. Contracts + Interfaces + Librairies (9) @@@@@@@@@@@@@@@@@@ */
+// from Pre-built ERC20 contracts
+
 import {TokenERC20} from "@thirdweb-dev/contracts/token/TokenERC20.sol";
 // the smart contract's metadata from an extension contract.
 import {ContractMetadataPlus} from "@thirdweb-dev/contracts/extension/ContractMetadataPlus.sol";
@@ -21,6 +22,7 @@ import {SafeMath} from "./utils/SafeMath.sol";
 
 /// +inheritance
 /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.0. BASE CONTRACT, EXTENSIONS & LIBRARIES @@@@@@@@@@@@@@@@@@@@@ */
+
 contract BYOMfg is
     TokenERC20,
     ContractMetadataPlus,
@@ -35,11 +37,13 @@ contract BYOMfg is
     /// +types
     /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.1. CUSTOM TYPES @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
     // @Dev: using a Library; getPrice() internal, getConversionRate(uint256 ethAmount) internal
+
     using PriceConverter for uint256;
 
     /// +immutables and constantes
-    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.2.CONSTANTES  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.2.IMMUTABLES / CONSTANTES  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
     // @Dev: owner address is "private", so only visible to this contract owner.
+
     address private immutable i_owner;
     uint256 public constant MINIMUM_USD = 5 * 10 ** 18;
     uint256 public constant UNIT_MULTIPLIER = 10 ** uint256(decimals);
@@ -57,21 +61,22 @@ contract BYOMfg is
 
     /// +variables
     /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.3. STATE VARIABLES @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+
     bool private _initialized; // Flag to track contract initialization
     address private chainOwner; // Owner of an instance of this contract.
     uint256 public chainID;
     uint256 public chainCurrencyPeg;
     uint256 public chainCurrencyPegRate;
     uint256 public chainCurrencyDecimal;
-    uint256 public chainInitialSupply; // Tokens created when contract was deployed
     uint256 public chainTotalSupply; // Tokens currently in circulation (VarCap or FixedCap?)
     string public chainCurrencyName;
-    string public chaiCurrencynSymbol;
+    string public chainCurrencySymbol;
 
+    // mapping to store which address deposited an amount of ETH
     address[] public chainDepositors;
-    //mapping to store which address deposited an amount of ETH
-    mapping(address => uint256) public addressToAmount; // dictionary
-    //mapping to retrieve a balance for a specific address
+    // dictionary
+    mapping(address => uint256) public addressToAmount;
+    // mapping to retrieve a balance for a specific address
     mapping(address => uint256) balances;
     // Approval granted to transfer tokens from one address to another.
     mapping(address => mapping(address => uint256)) internal allowed;
@@ -79,6 +84,7 @@ contract BYOMfg is
     /// +errors
     /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.4. E R R O R S @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
     // Errors allow you to provide information about why an operation failed.
+
     error NotOwner();
     error Unauthorized();
     error AlreadyInitialized();
@@ -116,8 +122,9 @@ contract BYOMfg is
     error PosMaxPerMonthExceeded();
     error PosMaxPerYearExceeded();
 
-    ///+events    (emit eventName();)
+    /// +events    (emit eventName();)
     /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.5. E V E N T S @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+
     event DepositRecieved(address _to, uint256 _amount);
     event TransferComplet(address _to, uint256 _amount);
     event TransferOrdered(
@@ -134,8 +141,9 @@ contract BYOMfg is
     );
     event withdrawalComplet(address _from, uint256 _amount);
 
-    ///+modifiers
+    /// +modifiers
     /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0.6.  M O D I F I E R S @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+
     modifier canInitialize(address chainOwner) {
         if (!initialized) {
             revert AlreadyInitialized();
@@ -289,12 +297,11 @@ contract BYOMfg is
     function initialize(
         address _newOwner,
         uint256 _chainID,
-        _chainCurrencyName,
-        _chaiCurrencySymbol,
-        _chainCurrencyDecimal,
-        _chainCurrencyPeg,
-        _chainCurrencyPegRate,
-        uint256 _chainInitialSupply,
+        string memory _chainCurrencyName,
+        string memory _chainCurrencySymbol,
+        uint256 _chainCurrencyDecimal,
+        uint256 _chainCurrencyPeg,
+        uint256 _chainCurrencyPegRate,
         uint256 _chainTotalSupply,
         uint256 _platformFeeBps,
         uint256 _flatPlatformFee,
@@ -346,7 +353,6 @@ contract BYOMfg is
         chainCurrencyDecimal = _chainCurrencyDecimal;
         chainCurrencyPeg = _chainCurrencyPeg;
         chainCurrencyPegRate = _chainCurrencyPegRate;
-        chainInitialSupply = _chainInitialSupply;
         chainTotalSupply = _chainTotalSupply;
 
         /// 4. Levraging "PlatformFee" abstract contract
@@ -400,7 +406,7 @@ contract BYOMfg is
 
     // Overriding the _mintRewards() function to mint and transfer rewards to stakers.
 
-    /** Overriding the _canSetStakeConditions() function to control who can modify the staking conditions.
+    /* Overriding the _canSetStakeConditions() function to control who can modify the staking conditions.
      * This function should return true if the caller is authorized to set stake conditions.
      */
 
@@ -423,6 +429,7 @@ contract BYOMfg is
     }
 
     /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> F -> get conversion rate USD/ETH (public view) <<<<<<<<<<<<< */
+
     function getConversionRate(
         uint256 ethAmount
     ) public view returns (uint256) {
@@ -434,30 +441,31 @@ contract BYOMfg is
 
     /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> F -> DEPOSIT (public payable) <<<<<<<<<<<<< */
     /* @dev  Allow the user to deposit USD */
+
     function deposit() public payable minimumRequire {
         // @Dev: payable function which needs to add minimum ETH
         // 18 digit number to be compared with deposited amount
-        uint256 minimumUSD = 50 * 10 ** 18; //the deposited amount is not less than 50 USD?
+        uint256 minimumUSD = 50 * 10 ** 18; // the deposited amount is not less than 50 USD?
         addressToAmount[msg.sender] += msg.value;
         chainDepositors.push(msg.sender);
 
-        /** Todo: fund sent directly to PoR (AVAX delegation to BYOMfg's validators, base by uptime, for minimum of 2 weeks?!)
+        /* Todo: fund sent directly to PoR (AVAX delegation to BYOMfg's validators, base by uptime, for minimum of 2 weeks?!)
          * rewards will come to pay the supervalidator in charge of borrowing when user transfer its hold
          * With the 'signature minting' mechanism: the user generate a 'mint request' to the contract, which will be signed  by the contract's Admin.
          * The contract's Admin will then send back the signed payload, of mint request, to the the depositor, autorizing the depositor to mint the requested amount of tokens.
-         * /
+         *
          */
     }
 
     /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> F -> TRANSFER (public) <<<<<<<<<<<<< */
-    /** Overriding transfer()/ send() / transferTo()/ transferFrom() from Token20 by adding logic to:
+    /* Overriding transfer()/ send() / transferTo()/ transferFrom() from Token20 by adding logic to:
      * 1) flashloan to cash-advanced sender,
      * 2)  by claiming ownership of the amount borrowed on behalf of the sender, to get back fund from PoR.
      */
 
     /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> F -> WITHDRAW-ALL (public payable) <<<<<<<<<<<<< */
     // @Dev: payable function to withdraw all the ETH from the contract, by the contract owner only
-    function ownerWithdraw() public payable onlyOwner {
+    function chainOwnerWithdraw() public payable onlychainOwner {
         payable(msg.sender).transfer(address(this).balance);
         //iterate through the depositors list and make them 0 since all the deposited amount has been withdrawn
         for (
@@ -476,7 +484,7 @@ contract BYOMfg is
     // Overriding withraw function fron Token20 base contract.
     function roleXWithdraw() public payable roleXOnly {}
 
-    /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ H E L P E R  F U N C T I O N S @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ H E L P E R  F U N C T I O N S @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
     // special functions such as constructor(), fallback() and receive() don't need the keyword function.
 
     /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> F16 -> FALLBACK() and RECIEVE() (external payable) <<<<<<<<<<<<< */
