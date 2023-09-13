@@ -1,0 +1,46 @@
+Arguments: 
+  C:\Program Files\nodejs\node.exe C:\Users\Lenovo\AppData\Roaming\npm\node_modules\yarn\bin\yarn.js add thirdweb
+
+PATH: 
+  C:\Workspaces\foundry-f23\byom\node_modules\.bin;C:\Workspaces\foundry-f23\byom\src\node_modules\.bin;C:\Workspaces\foundry-f23\byom\node_modules\.bin;C:\Workspaces\foundry-f23\node_modules\.bin;C:\Workspaces\node_modules\.bin;C:\node_modules\.bin;C:\Users\Lenovo\AppData\Roaming\npm\node_modules\npm\node_modules\@npmcli\run-script\lib\node-gyp-bin;C:\ProgramData\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\Program Files (x86)\Java\jre1.8.0_131\bin;C:\Program Files\MySQL\MySQL Utilities 1.6\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\PuTTY\;C:\Program Files (x86)\IBM\Cloud\bin;C:\Program Files\Git\cmd;C:\Program Files\nodejs\;C:\Users\Lenovo\.cargo\bin;C:\Users\Lenovo\AppData\Local\pnpm;C:\Users\Lenovo\AppData\Local\Programs\Python\Python310\Scripts\;C:\Users\Lenovo\AppData\Local\Programs\Python\Python310\;C:\ProgramData\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\Program Files (x86)\Java\jre1.8.0_131\bin;C:\Program Files\MySQL\MySQL Utilities 1.6\;C:\Program Files\Git\cmd;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\PuTTY\;C:\Program Files (x86)\IBM\Cloud\bin;C:\Program Files\nodejs\;"C:\Users\Lenovo\AppData\Local\Microsoft\WindowsApps; C:\kubectl.exe";C:\apache-maven-3.5.2\bin;C:\Users\Lenovo\AppData\Local\Microsoft\WindowsApps;C:\Users\Lenovo\AppData\Local\GitHubDesktop\bin;C:\Users\Lenovo\AppData\Roaming\Flow;C:\Users\Lenovo\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\Lenovo\AppData\Roaming\npm
+
+Yarn version: 
+  1.22.18
+
+Node version: 
+  18.17.0
+
+Platform: 
+  win32 x64
+
+Trace: 
+  Error: EPERM: operation not permitted, unlink 'C:\Workspaces\foundry-f23\byom\node_modules\bufferutil\prebuilds\win32-x64\node.napi.node'
+
+npm manifest: 
+  {
+    "name": "forge-starter",
+    "version": "1.0.0",
+    "main": "index.js",
+    "repository": "https://github.com/thirdweb-example/forge-starter.git",
+    "author": "thirdweb <eng@thirdweb.com>",
+    "license": "MIT",
+    "dependencies": {
+      "@openzeppelin/contracts": "^4.9.3",
+      "@openzeppelin/contracts-upgradeable": "^4.9.3",
+      "@thirdweb-dev/contracts": "^3.8.4",
+      "@thirdweb-dev/sdk": "^3.10.54",
+      "ethers": "^5.7.2",
+      "thirdweb": "^0.11.18"
+    },
+    "scripts": {
+      "build": "npx thirdweb@latest detect",
+      "deploy": "npx thirdweb@latest deploy",
+      "release": "npx thirdweb@latest release"
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile

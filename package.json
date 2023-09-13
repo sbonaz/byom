@@ -6,7 +6,12 @@
   "author": "thirdweb <eng@thirdweb.com>",
   "license": "MIT",
   "dependencies": {
-    "@thirdweb-dev/contracts": "^3.8.3"
+    "@openzeppelin/contracts": "^4.9.3",
+    "@openzeppelin/contracts-upgradeable": "^4.9.3",
+    "@thirdweb-dev/contracts": "^3.8.4",
+    "@thirdweb-dev/sdk": "^3.10.54",
+    "ethers": "^5.7.2",
+    "thirdweb": "^0.11.18"
   },
   "scripts": {
     "build": "npx thirdweb@latest detect",
