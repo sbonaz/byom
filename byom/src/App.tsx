@@ -7,10 +7,10 @@ export default async function App() {
 
   // =================== Initializing the SDK with the smart contract ==================== //
 
-  const YOUR_CLIENT_ID = "047e74725405aa4df6709af71c54e10b";
+  const REACT_BYOM_CLIENT_ID = "047e74725405aa4df6709af71c54e10b";
   // Passing fontend's CLIENTid
-    const sdk = new ThirdwebSDK("avalanche-fuji", {clientId: "YOUR_CLIENT_ID",});
-  // Getting Ccontract ADDRESS
+    const sdk = new ThirdwebSDK("avalanche-fuji", {clientId: "REACT_BYOM_CLIENT_ID",});
+  // Getting Contract ADDRESS
    const contract = await sdk.getContract("0xa8dBa53b88c90Bff2c692c2d0Eec69B26BdD0E80");
 
   // =============================== METADATAs ========================================== //
@@ -90,7 +90,7 @@ export default async function App() {
       <div className="container">
         <div className="header">
           <h1 className="title">
-            Web3 innovation: {" "}
+            {" "} :, a Web3 innovation. 
             <span className="gradient-text-0">
               <a
                 href="http://www.byom.fr/"
