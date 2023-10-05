@@ -1,60 +1,118 @@
+
+import React, { useEffect, useState, useRef  } from "react";
+
+/*///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/ In this code, we use the useState and useEffect hooks to handle the asynchronous initialization of App. 
+/ The useEffect hook is used to run the initialization code when the component mounts, 
+/ and we store the fetched metadata in the component's state using setMetadata. 
+/ This way, the component App is synchronous and only then it can be used as a JSX component.
+/ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */
+
+
+// To let TypeScript be aware of specific Thirdweb types, such as SmartContractwe, we are going to use, 
+// we should import these  types from the appropriate package or module where it's defined.
+import { ThirdwebSDK, SmartContract } from "@thirdweb-dev/sdk";
+
 import { ConnectWallet } from "@thirdweb-dev/react";
+
 import "./styles/Home.css";
-import { ThirdwebSDK } from "@thirdweb-dev/sdk";
-import "@thirdweb-dev/contracts/extension/ContractMetadata.sol";
 
-export default async function App() {
 
-  // =================== Initializing the SDK with the smart contract ==================== //
+export default function App() {
 
-  const REACT_BYOM_CLIENT_ID = "047e74725405aa4df6709af71c54e10b";
-  // Passing fontend's CLIENTid
-    const sdk = new ThirdwebSDK("avalanche-fuji", {clientId: "REACT_BYOM_CLIENT_ID",});
-  // Getting Contract ADDRESS
-   const contract = await sdk.getContract("0xa8dBa53b88c90Bff2c692c2d0Eec69B26BdD0E80");
+   // Create a ref to store the contract
+   // By using a useRef to store the contract, we ensure that the contract value persists across renders 
+   // and remains accessible within your component's functions (even outside useEffet( where it is set)).
+   // Initialize contractRef with null. 
+   // We need to use a type assertion to tell TypeScript that it will hold a SmartContract object later.
+  const contractRef = useRef<SmartContract | null>(null);
+  // In that way, TypeScript will allow us to assign contract to contractRef.current
 
-  // =============================== METADATAs ========================================== //
+  // Here, we use useState hooks to create state variables for each of the values that the user should input.
 
-  // Setting up contract's METADATAs (Set)
-    await contract.metadata.set({
-      name: "BYOM",
-      description: "Innovative decentralized payment platform"
-    });
+ // Using the useState hook to create a metadata state variable with an initial state containing empty name and description properties.
+  const [metadata, setMetadata] = useState({ name: "", description: "" }); 
 
-  // Updating the contract's METADATAs (Update)
-    await contract.metadata.update({
-      description: "My new contract description"
-    })
+  const [spenderAddress, setSpenderAddress] = useState('');
+  const [amountAllowed, setAmountAllowed] = useState(0);
+  const [toAddressTransfer, setToAddressTransfer] = useState('');
+  const [amountSent, setAmountSent] = useState(0);
+  const [fromAddress, setFromAddress] = useState('');
+  const [toAddress, setToAddress] = useState('');
+  const [amount, setAmount] = useState(0);
 
-  // Reading the contract's METADATAs (get)
-    const metadata = await contract.metadata.get();
-    console.log(metadata);
+  useEffect(() => {
+    async function initializeApp() {
+      // =================== Initializing the SDK with the smart contract ==================== //
 
-  // ============================ ALLOWANCE ============================================= //
+      const REACT_BYOM_CLIENT_ID = "047e74725405aa4df6709af71c54e10b";
+      // Passing frontend's CLIENT id
+      const sdk = new ThirdwebSDK("avalanche-fuji", {
+        clientId: REACT_BYOM_CLIENT_ID,
+      });
+      // Getting Contract ADDRESS
+      const contract = await sdk.getContract("0xa8dBa53b88c90Bff2c692c2d0Eec69B26BdD0E80");
+
+      // Assign the contract to the ref
+      contractRef.current = contract;
+
+      // =============================== METADATAs ========================================== //
+
+      // Setting up contract's METADATAs (Set)
+      await contract.metadata.set({
+        name: "BYOM",
+        description: "Innovative decentralized payment platform",
+      });
+
+      await contract.metadata.update({
+        description: "My new contract description",
+      });
+
+      // Reading the contract's METADATAs (get)
+      const fetchedMetadata = await contract.metadata.get();
+      const defaultDescription = "Default Description";
+      const metadataWithDefaultDescription = {
+        ...fetchedMetadata,
+        description: fetchedMetadata.description || defaultDescription,
+      };
+
+      setMetadata(metadataWithDefaultDescription);
+
+      }
+
+  initializeApp();
+  }, []);
+
+  // ============================ Blockchain funtion calls ============================================= //
+  // The following functions are used to perform the operations using the user-entered values from the state variables.
+  // And the onChange event handlers are used to update the state variables as the user types.
+
 
   // ERC20 Extension: setting up token ALLOWANCE
-   // Address of the wallet to allow transfers from 
-  const spenderAddress = "0x...";  
-   // The number of tokens to give as ALLOWANCE
-  const amountAllowed = 100;
-  await contract.erc20.setAllowance(spenderAddress, amountAllowed);
-
+  const handleSetAllowance = async () => {
+  // Use spenderAddress and amountAllowed from state
+    // Check if contractRef.current is defined before accessing its properties
+    if (contractRef.current) {
+      await contractRef.current.erc20.allowance(spenderAddress);
+    };
+  };
   // ERC20 Extension: TRANSFER tokens
-    // Address of the wallet you want to send the tokens to
-  const toAddressTransfer = "0x...";
-    // The amount of tokens you want to send
-  const amountSent = 0.1;
-  await contract.erc20.transfer(toAddressTransfer, amountSent);
+  const handleTransferTokens = async () => {
+  // Use toAddressTransfer and amountSent from state
+    // Check if contractRef.current is defined before accessing its properties
+      if (contractRef.current) {
+        await contractRef.current.erc20.transfer(toAddressTransfer, amountSent);
+      };
+  }
 
   // ERC20 extension: Transfer token from a specific address
-    // Address of the wallet sending the tokens
-  const fromAddress = "0x106150578098F4Ac8AD8b0f6f806658D4F2eDeD7";
-  // Address of the wallet you want to send the tokens to
-  const toAddress = "0x...";
-  // The number of tokens you want to send
-  const amount = 1.2
-  // Note that the connected wallet must have approval to transfer the tokens of the fromAddress
-  await contract.erc20.transferFrom(fromAddress, toAddress, amount);
+  const handleTransferFrom = async () => {
+  // Use fromAddress, toAddress, and amount from state
+      // Check if contractRef.current is defined before accessing its properties
+      if (contractRef.current) {
+       await contractRef.current.erc20.transferFrom(fromAddress, toAddress, amount);
+      };
+  }
 
   // ============================================================= //
 
@@ -81,10 +139,11 @@ export default async function App() {
 
 
   // ============================================================= //
+    
 
 
 
-
+  
   return (
     <main className="main">
       <div className="container">
@@ -101,11 +160,9 @@ export default async function App() {
               </a>
             </span>
           </h1>
-
           <p className="description">
             BYOM has been built with love to serve the future
           </p>
-
           <div className="connect">
             <ConnectWallet
               dropdownPosition={{
@@ -134,7 +191,6 @@ export default async function App() {
               </p>
             </div>
           </a>
-
           <a
             href="https://thirdweb.com/dashboard"
             className="card"
@@ -172,6 +228,76 @@ export default async function App() {
             </div>
           </a>
         </div>
+      </div>
+      <div className="connect">
+        <ConnectWallet
+          dropdownPosition={{
+            side: "bottom",
+            align: "center",
+          }}
+        />
+      </div>
+      <div>
+
+        {/* input fields are created in the UI to collect user-entered values for metadata. */}
+
+        <label>
+          Name:
+          <input
+            type="text"
+            value={metadata.name}
+            onChange={(event) => {
+              // Update the metadata.name property when the user types. 
+              // we use the value prop to set the input field "name" based on the metadata state
+              setMetadata({
+                ...metadata,
+                name: event.target.value,
+              });
+            }}
+          />
+        </label>
+        <label>
+          Description:
+          <input
+            type="text"
+            value={metadata.description}
+            onChange={(event) => {
+              // Update the metadata.description property when the user types.
+              // we use the value prop to set the input field "description" based on the metadata state
+              setMetadata({
+                ...metadata,
+                description: event.target.value,
+              });
+            }}
+          />
+        </label>
+
+        {/* input fields are created in the UI to collect user-entered values for Allowance and transfer. */}
+
+        <input
+          type="text"
+          placeholder="Spender Address"
+          value={spenderAddress}
+          onChange={(e) => setSpenderAddress(e.target.value)}
+        />
+
+
+
+        {/* input forms are created in the UI to collect user-entered values for other functions. */}
+
+
+        {/* Buttons */}
+        {/* Left over 
+            <button type="submit" onClick={handleNameChange}>Contract Name</button>
+            <button type="submit" onClick={handleDescriptionChange}>Contract Description</button>
+        */}
+
+        <button type="button" onClick={handleSetAllowance}>Set Allowance</button>
+
+        <button type="submit" onClick={handleTransferTokens}>Transfer Tokens</button>
+
+        <button type="submit" onClick={handleTransferFrom}>Transfer From</button>
+
       </div>
     </main>
   );

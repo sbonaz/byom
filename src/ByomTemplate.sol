@@ -34,6 +34,17 @@ contract ByomTemplate is TokenERC20 {
         uint64 publishedAt;
         string externalLink; // Changed to string
     }
+    // a Tuple Req
+    struct Req {
+        address to;
+        address primarySaleRecipient;
+        uint8 quantity;
+        uint64 price;
+        address currency;
+        uint64 validityStartTimestamp;
+        uint64 validityEndTimestamp;
+        uint64 uid;
+    }
 
     /// +immutables and constantes
     /*///////////////////////////////////////////////////////////////
@@ -83,9 +94,8 @@ contract ByomTemplate is TokenERC20 {
     //////////////////////////////////////////////////////////////*/
 
     address _defaultAdmin; // will be sent for initializing TokenERC20
-    // bool private initialized; // Flag to track contract initialization
     Role public roleAssigned;
-    // Native currency for compliant DeFi
+    // Native currency in compliant DeFi
     uint256 public nativeCurrencyDecimals;
     uint256 public nativeCurrencyPeg0;
     uint256 public nativeCurrencyPeg1;
@@ -93,23 +103,16 @@ contract ByomTemplate is TokenERC20 {
     uint256 public nativeCurrencyPeg3;
     uint256 public nativeCurrencyPeg4;
     uint256 public nativeCurrencyPeg5;
-    uint256 public nativeCurrencyPegRate;
+    uint256 public nativeCurrencyPegRate0;
+    uint256 public nativeCurrencyPegRate1;
+    uint256 public nativeCurrencyPegRate3;
+    uint256 public nativeCurrencyPegRate4;
+    uint256 public nativeCurrencyPegRate5;
     // Dictionary
-    mapping(Role => bytes32) public roleToBytes32;
-    mapping(address => bytes32) public addressToRoleHash;
+    mapping(Role => bytes32) public roleToBytes32; // ie. CLIENT_ROLE  -> keccack256("CLIENT_ROLE") : memorized role in the blockchain
+    mapping(address => bytes32) public addressToRoleHash; // ie. 0x04cdaaDCcb15214357fa65547E32BbEE3017988c -> keccack256("CLIENT_ROLE")
     // List of role hashes
     bytes32[] public roleHashes;
-    // a Tuple Req
-    struct Req {
-        address to;
-        address primarySaleRecipient;
-        uint8 quantity;
-        uint64 price;
-        address currency;
-        uint64 validityStartTimestamp;
-        uint64 validityEndTimestamp;
-        uint64 uid;
-    }
 
     /// +errors
     /*///////////////////////////////////////////////////////////////
@@ -150,7 +153,7 @@ contract ByomTemplate is TokenERC20 {
                 hasRole(roleToBytes32[Role.AUDITOR_ROLE], msg.sender) ||
                 hasRole(roleToBytes32[Role.AUTHORITY_ROLE], msg.sender) ||
                 hasRole(roleToBytes32[Role.SANCTIONER_ROLE], msg.sender),
-            "Caller does not have the required role"
+            "Caller does not have the required role for this transaction"
         );
         _;
     }
@@ -177,7 +180,7 @@ contract ByomTemplate is TokenERC20 {
     modifier onlyClientRole() {
         require(
             hasRole(roleToBytes32[Role.CLIENT_ROLE], msg.sender),
-            "Caller does not have the CLIENT role"
+            "Caller does not have the CLIENT role for this transaction"
         );
         _;
     }
@@ -345,6 +348,7 @@ contract ByomTemplate is TokenERC20 {
                                 0.6. E V E N T S
     //////////////////////////////////////////////////////////////*/
 
+    event NewGuestCreated(address account);
     event NewAccountCreated(address _newAccount, Role _newAcoountRole);
     event withdrawalComplet(address _from, uint256 _amount);
     event DepositRecieved(address _to, uint256 _amount);
@@ -361,7 +365,6 @@ contract ByomTemplate is TokenERC20 {
         uint256 _amount,
         string _reason
     );
-    event NewGuestCreated(address account);
 
     /*///////////////////////////////////////////////////////////////
                                 1.1. CONSTRUCTOR
@@ -370,8 +373,6 @@ contract ByomTemplate is TokenERC20 {
     // The construtor is useless if this contract is deployed through a proxy, on Thirdweb plateform for instance.
 
     constructor() {
-        i_owner = msg.sender;
-        // init to assign this contract specific immutable variables
         META_DATA = ModuleMetadata(
             NAME,
             Author(i_owner, AUTHOR_URL),
@@ -379,9 +380,9 @@ contract ByomTemplate is TokenERC20 {
             TIMESTAMP,
             CONTRACT_URL
         );
-
+        i_owner = msg.sender;
+        // init to assign this contract specific immutable variables
         _defaultAdmin = i_owner;
-
         // Initialize role hashes array
         roleHashes = [
             keccak256("GUEST_ROLE"), // 0
@@ -398,7 +399,6 @@ contract ByomTemplate is TokenERC20 {
             keccak256("AUTHORITY_ROLE"), // 11
             keccak256("SANCTIONER_ROLE") // 12
         ];
-
         /*   grantRole(
             0x0000000000000000000000000000000000000000000000000000000000000000, _defaultAdmin); 
         */
@@ -549,7 +549,7 @@ contract ByomTemplate is TokenERC20 {
     }
 
     /*///////////////////////////////////////////////////////////////
-                           1.5. ROLE BASE FUNCTION CONTROLS
+                           1.5. ROLE BASE CONTROLS FUNCTION 
     //////////////////////////////////////////////////////////////*/
 
     // setting up custom roles for subnet's abstract accounts.
