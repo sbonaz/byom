@@ -1,13 +1,15 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App";
+import ByomWebApp from "./ByomWebApp";
 import { ThirdwebProvider } from "@thirdweb-dev/react";
+import { AvalancheFuji } from "@thirdweb-dev/chains";
 import "./styles/globals.css";
 import reportWebVitals from "./reportWebVitals";
 
 // Defining the chain the dApp will work on.
 // One can also import additional chains from `@thirdweb-dev/chains` and pass them directly.
-const activeChain = "avalanche-fuji";
+const activeChain = AvalancheFuji;
+// ex: Avalanche Fuji Testnet
 
 const container = document.getElementById("react-goes-here");
 const root = createRoot(container!);
@@ -17,7 +19,7 @@ root.render(
       activeChain={activeChain}
       clientId={process.env.REACT_BYOM_CLIENT_ID}
     >
-      <App/>
+      <ByomWebApp/>
     </ThirdwebProvider>
   </React.StrictMode>
 );

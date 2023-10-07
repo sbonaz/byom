@@ -228,113 +228,113 @@ setMetadata(metadataWithDefaultDescription);
         />
       </div>
 
-        {/* To allow users to input the values for given variables*/}
+    {/* To allow users to input the values for given variables*/}
 
-        {/* input fields are created in the UI to collect user-entered values for metadata. */}
+      {/* input fields are created in the UI to collect user-entered values for metadata. */}
         <div>
-           <form onSubmit={handleSubmitMetadata}>
-    <label>
-      Name:
-      <input
-        type="text"
-        value={metadata.name}
-        placeholder="Name"
-        onChange={(e) => setMetadata({ ...metadata, name: e.target.value })}
-      />
-    </label>
-    <label>
-      Description:
-      <input
-        type="text"
-        value={metadata.description}
-        placeholder="Description"
-        onChange={(e) => setMetadata({ ...metadata, description: e.target.value })}
-      />
-    </label>
-    <button type="submit">Contract Metadata</button>
+          <form onSubmit={handleSubmitMetadata}>
+            <label>
+              Name:
+              <input
+                type="text"
+                value={metadata.name}
+                placeholder="Name"
+                onChange={(e) => setMetadata({ ...metadata, name: e.target.value })}
+              />
+            </label>
+            <label>
+              Description:
+              <input
+                type="text"
+                value={metadata.description}
+                placeholder="Description"
+                onChange={(e) => setMetadata({ ...metadata, description: e.target.value })}
+              />
+            </label>
+            <button type="submit">Contract Metadata</button>
           </form>
         </div>
 
-        {/* input fields are created in the UI to collect user-entered values for Allowance and transfer. */}
+       {/* input fields are created in the UI to collect user-entered values for Allowance and transfer. */}
         <div>
           <form onSubmit={handleSetAllowance}>
             <label>
-            Spender Address:     
-            <input
-              type="text"
-              value={spenderAddress}
-              placeholder="Spender Address"
-              onChange={(e) => setSpenderAddress(e.target.value)}
-            />
+              Spender Address:     
+              <input
+                type="text"
+                value={spenderAddress}
+                placeholder="Spender Address"
+                onChange={(e) => setSpenderAddress(e.target.value)}
+              />
             </label>      
             <label>
-            Allowance:     
-            <input
-              type="text"
-              value={amountAllowed}
-              placeholder="Amount Allowed"
-             onChange={(e) => setAmountAllowed(e.target.value)}
-            />
+              Allowance:     
+              <input
+                type="text"
+                value={amountAllowed}
+                placeholder="Amount Allowed"
+              onChange={(e) => setAmountAllowed(e.target.value)}
+              />
             </label>
             <button type="submit">Tokens Allowance</button>
           </form>
         </div>
 
-        {/* input forms are created in the UI to collect user-entered values for other functions. */}
+      {/* input forms are created in the UI to collect user-entered values for other functions. */}
         <div>
-  <form onSubmit={handleTransferTokens}>
-    <label>
-      To Address:
-      <input
-        type="text"
-        value={toAddressTransfer}
-        placeholder="0x0..."
-        onChange={(e) => setToAddressTransfer(e.target.value)}
-      />
-    </label>
-    <label>
-      Amount Sent:
-      <input
-        type="number"
-        value={amountSent}
-        onChange={(e) => setAmountSent(e.target.value)}
-      />
-    </label>
-    <button type="submit">Transfer Tokens</button>
-  </form>
-       </div>
+          <form onSubmit={handleTransferTokens}>
+            <label>
+              To Address:
+              <input
+                type="text"
+                value={toAddressTransfer}
+                placeholder="0x0..."
+                onChange={(e) => setToAddressTransfer(e.target.value)}
+              />
+            </label>
+            <label>
+              Amount Sent:
+              <input
+                type="number"
+                value={amountSent}
+                onChange={(e) => setAmountSent(e.target.value)}
+              />
+            </label>
+            <button type="submit">Transfer Tokens</button>
+          </form>
+        </div>
 
-      <div>
-  <form onSubmit={handleTransferFrom}>
-    <label>
-      From Address:
-      <input
-        type="text"
-        value={fromAddress}
-        placeholder="0x0..."
-        onChange={(e) => setFromAddress(e.target.value)}
-      />
-    </label>
-    <label>
-      To Address:
-      <input
-        type="text"
-        value={toAddress}
-        placeholder="0x0..."
-        onChange={(e) => setToAddress(e.target.value)}
-      />
-    </label>
-    <label>
-      Amount Sent:
-      <input
-        type="number"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-      />
-    </label>
-    <button type="submit">TransferFrom Tokens</button>
-  </form>
-     </div>
+        <div>
+          <form onSubmit={handleTransferFrom}>
+            <label>
+              From Address:
+              <input
+                type="text"
+                value={fromAddress}
+                placeholder="0x0..."
+                onChange={(e) => setFromAddress(e.target.value)}
+              />
+            </label>
+            <label>
+              To Address:
+              <input
+                type="text"
+                value={toAddress}
+                placeholder="0x0..."
+                onChange={(e) => setToAddress(e.target.value)}
+              />
+            </label>
+            <label>
+              Amount Sent:
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </label>
+            <button type="submit">TransferFrom Tokens</button>
+          </form>
+        </div>
 
     </main>
   );

@@ -1,0 +1,8 @@
+
+
+07/10:  pnpm install thirdweb @21h50
+
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: C:\Users\Lenovo\AppData\Local\pnpm\store\v3   
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 1840, reused 1829, downloaded 10, added 1841, done
