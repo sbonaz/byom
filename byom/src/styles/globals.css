@@ -8,7 +8,7 @@ body {
 }
 
 a {
-  color: #84309c;
+  color: hwb(123 20% 64% / 0.892);
   text-decoration: none;
 }
 
@@ -17,6 +17,6 @@ a {
 }
 
 body {
-  color: #e7e8e8;
-  background: #070707;
+  color: #a6c876;
+  background: #ffff;
 }

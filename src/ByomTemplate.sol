@@ -63,11 +63,17 @@ contract ByomTemplate is TokenERC20 {
     // ROLES list (leveraging : Abstract account / abstract wallet / accountFactory which handlles the user login)
     enum Role {
         GUEST_ROLE, // #0
+        // GUEST's function: , Explor_Tx
         CLIENT_ROLE, // #1
+        // client's functions: Subscribe_to_SC, Cashin, Transfer, Merchant_Payment, Explor_Tx, Cashout
         MERCHANT_ROLE, // #2
+        // Merchant's functions: Subscribe_to_SC, Whole_sale_Cashin, TransferFrom, Receiveve_Payment, Explor_Tx, Cashout
         PoS_ROLE, // #3
+        // XXX's functions: Subscribe_to_SC, Cashin, Transfer, Merchant_Payment, Explor_Tx, Cashout
         AGEANT_ROLE, // #4
+        // XXX's functions: Subscribe_to_SC, Cashin, Transfer, Merchant_Payment, Explor_Tx, Cashout
         AMBASSADOR_ROLE, // #5
+        // XXX's functions: Subscribe_to_SC, Cashin, Transfer, Merchant_Payment, Explor_Tx, Cashout
         SUPPORT_ROLE, // #6
         PoAR_ROLE, // #7  Proof Of Assets & Reserves. We can have multiple addresses with this role. Each address for specific crypto.
         ORAMP_ROLE, // #8

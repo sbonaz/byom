@@ -7,7 +7,7 @@ import reportWebVitals from "./reportWebVitals";
 
 // Defining the chain the dApp will work on.
 // One can also import additional chains from `@thirdweb-dev/chains` and pass them directly.
-const activeChain = "avalanche";
+const activeChain = "avalanche-fuji";
 
 const container = document.getElementById("react-goes-here");
 const root = createRoot(container!);

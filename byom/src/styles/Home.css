@@ -13,28 +13,28 @@
 }
 
 .gradient-text-0 {
-  background: -webkit-linear-gradient(#bfa3da, #84309c, #c735b0);
+  background: -webkit-linear-gradient(#e5f980, #659436, #30ad14);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gradient-text-1 {
-  background: -webkit-linear-gradient(#a79af9, #7aa8d2);
+  background: -webkit-linear-gradient(#e5f980, #659436);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gradient-text-2 {
-  background: -webkit-linear-gradient(#bfa3da, #743f93);
+  background: -webkit-linear-gradient(#a3daa4, #659436);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gradient-text-3 {
-  background: -webkit-linear-gradient(#c35ab1, #e9a8d9);
+  background: -webkit-linear-gradient(#e5f980, #f1db48);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -44,7 +44,7 @@
 .title a:focus,
 .title a:active {
   text-decoration: underline;
-  text-decoration-color: #84309c;
+  text-decoration-color: #d4e66f;
 }
 
 .title {
@@ -83,7 +83,7 @@
 }
 
 .card {
-  background-color: #131313;
+  background-color: #ced1b7;
   text-align: left;
   color: inherit;
   text-decoration: none;
