@@ -1,13 +1,26 @@
-import { Avalanche } from "@thirdweb-dev/chains";
+
+/* /////////////////////////////////////////////////////////////////////////////////////
+    README: this code aimes at creating and connecting a SmartWallet (standard ERC4337) 
+    to interact with a smart contract (TokenERC20) on the Avalanche Fuji testnet.
+    Setting up and connecting a SmartWallet effectively and
+    handling the scenario where the associated contract may or may not have been deployed.
+////////////////////////////////////////////////////////////////////////////////////// */
+
+// Importing the necessary modules and constants.
+import { AvalancheFuji } from "@thirdweb-dev/chains";
 import { SmartWallet, LocalWallet } from "@thirdweb-dev/wallets";
 import { ThirdwebSDK, isContractDeployed } from "@thirdweb-dev/sdk";
+import { BYOMFr_CONTRACT_ADDRESS } from "../constants/addresses";
 
-import { BYOM_CONTRACT_ADDRESS } from "../../constants/addresses";
+const chain = AvalancheFuji;
 
-
-const chain = Avalanche;
-
-// A function that returns back an object of type SmartWallet.
+/*  A function that creates a new SmartWallet instance. It returns back an object of type SmartWallet.
+    This function takes no arguments and configures the SmartWallet with relevant parameters such as:
+    - the blockchain chain, 
+    - factory address, 
+    - gasless option, and 
+    - client ID. 
+*/
  export default function createSmartWallet(): SmartWallet {  
     // we create a new SmartWallet by passing 4 arguments
     const smartWallet = new SmartWallet({ 
@@ -19,22 +32,26 @@ const chain = Avalanche;
     return smartWallet;
 };
 
-// Function that connects the newlly created smartWallet to the chain through a factory contract with 2 arguments needed
+/*   Asynchronous function connectSmartWallet that connects the SmartWallet to the blockchain. 
+     It takes two arguments:
+    - Password, for the wallet encryption and
+    - statusCallback, to provide status updates.
+*/
 export async function connectSmartWallet(
     password: string,
-    statusCallback: (status: string) => void   // ?
+    statusCallback: (status: string) => void
     ): Promise<SmartWallet> {
-        statusCallback("Searching for byomactor account...");
-        const smartWallet = createSmartWallet();
-        const personalWallet = new LocalWallet();
-        await personalWallet.loadOrCreate({
+        statusCallback("Searching for byomActor account...");
+        const smartWallet = createSmartWallet();  // Creating an instance of SmartWallet using createSmartWallet.
+        const personalWallet = new LocalWallet(); 
+        await personalWallet.loadOrCreate({      // Creating a LocalWallet instance and load or create a wallet using encryption.
             strategy: "encryptedJson", 
             password: password,
         });
-        await smartWallet.connect({
+        await smartWallet.connect({  // Connecting the SmartWallet to the LocalWallet. 
             personalWallet
         });  
-
+        //  Initializing the Thirdweb SDK with the SmartWallet and chain information. 
         const sdk = await ThirdwebSDK.fromWallet(
             smartWallet,
             chain,
@@ -43,30 +60,34 @@ export async function connectSmartWallet(
             }
         );
 
-        // If the contract has already been deployed ...
+         // Checking if the contract associated with the wallet address has already been deployed using the isContractDeployed function.
         const address = await sdk.wallet.getAddress();
         const isDeployed = await isContractDeployed(address, sdk.getProvider(), );
 
-        // If the contract hasn't already been deployed ...
+        // Handling Contract Deployment: Depending on whether the contract has already been deployed, 
+        // the code either creates a new account and funds it or logs a message indicating that the account is found.
+
+        /*  If the contract hasn't already been deployed, we assume it's a new account and perform the following actions:
+                - Log a status message.
+                - Get the byomContract using the contract address.
+                - Create two transactions: one for transferring tokens and one for preparing a claim.
+                - Send the batch transactions.
+        */
+
         if (!isDeployed) {
-
-            // connecting with unexist account
             statusCallback("New account detected...");
-            const byomContract = await sdk.getContract(BYOM_CONTRACT_ADDRESS); 
-
-            // we create an account for this unknown actor
+    
+            const byomContract = await sdk.getContract(BYOMFr_CONTRACT_ADDRESS);
+    
             statusCallback("Creating new account...");
-            // Creating first transactions
-            const tx1 = await byomContract.erc20.transfer("0x48148b0268B7FfeeEb9B1E402220135e62bF077D", 0.0002);
-            const tx2 = await byomContract.erc20.claim.prepare(0.0001);
-            const Tx = [tx1, tx2];
-            // Sending batch transactions
+    
+            // Create and send transactions directly using contract methods
+            await byomContract.erc20.transfer("0x48148b0268B7FfeeEb9B1E402220135e62bF077D", 0.0002);
+            await byomContract.erc20.claim.prepare(0.0001);
+    
             statusCallback("Sending initial funds...");
-            const batchTx = await smartWallet.executeBatch(Tx);
-            console.log(batchTx);
-        } 
-        else {
-            statusCallback("Trainer account found! Loading monster...");         
+        } else {
+            statusCallback("Byomer account found! Loading ByomAd...");
         }
-        return smartWallet;
-};
+        return smartWallet; // Add this line to ensure a consistent return type
+}

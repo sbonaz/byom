@@ -1,16 +1,17 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App";
+import ByomSw from "./ByomSw";
 import reportWebVitals from "./reportWebVitals";
 import { ThirdwebProvider } from "@thirdweb-dev/react";
 import "./styles/globals.css";
+import { AvalancheFuji } from "@thirdweb-dev/chains";
 
-// This is the chain your dApp will work on.
+// Here is the chain our dApp will work on.
 // Change this to the chain your app is built for.
-// You can also import additional chains from `@thirdweb-dev/chains` and pass them directly.
-const activeChain = "avalanche";
+// one can also import additional chains from `@thirdweb-dev/chains` and pass them directly.
+const activeChain = AvalancheFuji;
 
-const container = document.getElementById("root");
+const container = document.getElementById("rootByom");
 const root = createRoot(container!);
 root.render(
   <React.StrictMode>
@@ -18,7 +19,7 @@ root.render(
       activeChain={activeChain}
       clientId={process.env.REACT_DAPP_BYOM_CLIENT_ID}
     >
-      <App />
+      <ByomSw/>
     </ThirdwebProvider>
   </React.StrictMode>
 );

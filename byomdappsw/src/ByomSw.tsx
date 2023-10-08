@@ -1,6 +1,6 @@
 
 import "./styles/Home.module.css";
-import { ByomLogin } from './components/ByomLogin';
+import { ByomSwLogin } from './components/ByomSwLogin';
 import Navbar from './components/Navbar';
 
 export default function App() {
@@ -22,7 +22,7 @@ export default function App() {
           </h1>
           <div>
             <Navbar/>
-            <ByomLogin/>
+            <ByomSwLogin/>
           </div>
         </div>
       </div>
